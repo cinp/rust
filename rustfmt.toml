@@ -1,0 +1,12 @@
+# https://github.com/rust-lang/rustfmt/blob/master/Configurations.md
+unstable_features = true
+version = "Two"
+
+tab_spaces = 2
+brace_style = "AlwaysNextLine"
+control_brace_style = "AlwaysNextLine"
+reorder_impl_items = true
+group_imports = "StdExternalCrate"
+
+enum_discrim_align_threshold = 20
+struct_field_align_threshold = 20
