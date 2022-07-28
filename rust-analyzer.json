@@ -1,5 +1,12 @@
 {
     "rustfmt": {
         "extraArgs": ["+nightly"]
-    }
+    },
+    "_cargo": {
+      "loadOutDirsFromCheck": true
+    },
+    "_procMacro": {
+        "enable": true
+    },
+    "_rust-analyzer.diagnostics.disabled": ["unresolved-proc-macro"]
 }
