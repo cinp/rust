@@ -1,0 +1,41 @@
+use serde::Serialize;
+
+#[derive(Serialize, Debug)]
+struct Test01
+{
+  pub name: String,
+  pub doc:  String,
+}
+
+#[derive(Serialize, Debug)]
+struct Test02
+{
+  pub key:   String,
+  pub value: String,
+}
+
+fn output(data: Option<impl Serialize + std::fmt::Debug>)
+{
+  let buff: String = match data
+  {
+    Some(value) => serde_json::to_string(&value).unwrap(),
+    None => "<None>".to_string(),
+  };
+
+  println!("{:?}", buff);
+}
+
+fn main()
+{
+  output(None::<()>);
+
+  output(Some(Test01 {
+    name: "Bob".to_string(),
+    doc:  "The origional".to_string(),
+  }));
+
+  output(Some(Test02 {
+    key:   "The Answer".to_string(),
+    value: "42".to_string(),
+  }));
+}
