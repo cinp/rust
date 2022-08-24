@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use http::header::{
   HeaderMap, HeaderName, HeaderValue, ACCEPT, ACCEPT_CHARSET, CONTENT_TYPE, USER_AGENT,
 };
@@ -12,18 +14,12 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::error::Error;
+use crate::error::{Error, ProtocolError};
 
 const MAX_ALLOWED_RESPONSE_SIZE: u64 = 40960;
 
 #[derive(Deserialize, Debug)]
 struct ServerError
-{
-  msg: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct BadRequest
 {
   msg: String,
 }
@@ -182,21 +178,6 @@ impl Client
     //   raise ResponseError( 'HTTP code "{0}" unhandled'.format( resp.code ) )
     //
     // logging.debug( 'cinp: got HTTP code "{0}"'.format( http_code ) )
-    //
-    // if http_code == 401:
-    //   resp.close()
-    //   logging.warning( 'cinp: Invalid Session' )
-    //   raise InvalidSession()
-    //
-    // if http_code == 403:
-    //   resp.close()
-    //   logging.warning( 'cinp: Not Authorized' )
-    //   raise NotAuthorized()
-    //
-    // if http_code == 404:
-    //   resp.close()
-    //   logging.warning( 'cinp: Not Found' )
-    //   raise NotFound()
 
     let response_content_length = match res.body().size_hint().upper()
     {
@@ -218,23 +199,35 @@ impl Client
       let error: ServerError = match serde_json::from_slice(&bytes)
       {
         Ok(res) => res,
-        Err(err) => ServerError {
+        Err(_err) => ServerError {
           msg: "asdf".to_string(),
         },
       };
-      return Err(Error::ServerError(error.msg));
+      return Err(Error::ServerError(ProtocolError { msg: error.msg }));
     }
 
     if http_code == 400
     {
-      let error: BadRequest = match serde_json::from_slice(&bytes)
+      println!("{:?}", bytes);
+      let error: HashMap<String, String> = match serde_json::from_slice(&bytes)
       {
         Ok(res) => res,
-        Err(err) => BadRequest {
-          msg: "asdf".to_string(),
-        },
+        Err(err) => HashMap::new().insert("msg", err.to_string()),
       };
-      return Err(Error::BadRequest(error.msg));
+      return Err(Error::BadRequest(ProtocolError(error)));
+    }
+
+    if http_code == 401
+    {
+      return Err(Error::InvalidSession);
+    }
+    if http_code == 403
+    {
+      return Err(Error::NotAuthorized);
+    }
+    if http_code == 404
+    {
+      return Err(Error::NotFound);
     }
 
     let value: T = serde_json::from_slice(&bytes).map_err(Error::Parse)?;
