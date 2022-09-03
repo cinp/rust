@@ -12,17 +12,11 @@ use hyper::client::HttpConnector;
 use hyper::{Body, Client as HTTPClient, Request, Response};
 use regex::Regex;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-use crate::error::{Error, ProtocolError};
+use crate::error::{Error, InvalidRequest};
 
 const MAX_ALLOWED_RESPONSE_SIZE: u64 = 40960;
-
-#[derive(Deserialize, Debug)]
-struct ServerError
-{
-  msg: String,
-}
 
 pub struct Client
 {
@@ -194,27 +188,34 @@ impl Client
     let http_code = res.status().clone();
     let bytes = hyper::body::to_bytes(res.into_body()).await?;
 
-    if http_code == 500
+    if http_code == 500 || http_code == 400
     {
-      let error: ServerError = match serde_json::from_slice(&bytes)
+      let data: HashMap<String, String> = match serde_json::from_slice(&bytes)
       {
         Ok(res) => res,
-        Err(_err) => ServerError {
-          msg: "asdf".to_string(),
-        },
+        Err(err) =>
+        {
+          let mut val = HashMap::new();
+          val.insert(
+            "message".to_string(),
+            format!("Error Parsing Response: {}", err.to_string()),
+          );
+          val.insert(
+            "response".to_string(),
+            String::from_utf8(bytes.to_vec()).unwrap(),
+          );
+          val
+        }
       };
-      return Err(Error::ServerError(ProtocolError { msg: error.msg }));
-    }
 
-    if http_code == 400
-    {
-      println!("{:?}", bytes);
-      let error: HashMap<String, String> = match serde_json::from_slice(&bytes)
+      if http_code == 400
       {
-        Ok(res) => res,
-        Err(err) => HashMap::new().insert("msg", err.to_string()),
-      };
-      return Err(Error::BadRequest(ProtocolError(error)));
+        return Err(Error::InvalidRequest(InvalidRequest::new(data)));
+      }
+      else
+      {
+        //return Err(Error::ServerError(ProtocolError { detail: data }));
+      }
     }
 
     if http_code == 401
