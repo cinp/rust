@@ -103,7 +103,7 @@ impl Client
 
     headers.insert(
       HeaderName::from_bytes(b"CInP-Version").unwrap(),
-      HeaderValue::from_bytes(b"1.0").unwrap(),
+      HeaderValue::from_bytes(b"2.0").unwrap(),
     );
 
     let mut target_uri = Parts::default();

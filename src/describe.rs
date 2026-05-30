@@ -7,7 +7,7 @@ use crate::client::Client;
 use crate::error::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ParamaterType
+pub struct ParameterType
 {
   pub name:            String,
   pub path:            Option<String>,
@@ -82,7 +82,7 @@ pub struct Describe
   pub return_type:         Option<ReturnType>,
   #[serde(rename = "static")]
   pub static_:             Option<bool>,
-  pub paramaters:          Option<Vec<FieldType>>,
+  pub parameters:          Option<Vec<FieldType>>,
 }
 
 impl Client
